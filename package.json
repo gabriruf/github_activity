@@ -1,0 +1,33 @@
+{
+  "name": "github-activity",
+  "version": "1.0.0",
+  "description": "A basic API that gets data from GitHub profiles. (roadmap.sh project)",
+  "keywords": [
+    "api",
+    "github",
+    "nodejs",
+    "javascript",
+    "typescript",
+    "roadmap.sh"
+  ],
+  "homepage": "https://github.com/gabriruf/github_activity#readme",
+  "bugs": {
+    "url": "https://github.com/gabriruf/github_activity/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gabriruf/github_activity.git"
+  },
+  "license": "GPL-3.0",
+  "author": "Gabriel Souza",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "typescript": "^6.0.3"
+  }
+}
