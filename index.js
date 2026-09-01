@@ -43,10 +43,10 @@ https
 
         res.on('end', () => {
             let info = JSON.parse(data);
-            const filename = argv[3];
+            const FILENAME = argv[3];
             console.log(info);
             
-            createFile(filename, info);
+            createFile(FILENAME, info);
         })
     })
     .on('error', err => {
