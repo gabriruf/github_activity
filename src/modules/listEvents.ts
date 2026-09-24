@@ -139,8 +139,100 @@ export interface Payload {
   number?: number
   pull_request?: PullRequest
   issue?: Issue
-  review: Review
+  review?: Review
+  release?: Release
+  discussion?: Discussion
+  pages?: Pages[]
+  comment?: Comment
 }
+
+export interface Comment {
+    url: string
+    html_url: string
+    id: number
+    node_id: string
+    user: User
+    position: string | null
+    line: string | null
+    path: string | null
+    commit_id: string
+    created_at: string
+    updated_at: string
+    body: string
+    reactions: Reactions
+}
+
+export interface Pages {
+    page_name: string
+    title: string
+    summary: string | null
+    action: string
+    sha: string
+    html_url: string
+}
+
+export interface Discussion {
+    repository_url: string
+    category: {
+        id: number
+        node_id: string
+        repository_id: number
+        emoji: string
+        name: string
+        description: string
+        created_at: string
+        updated_at: string
+        slug: string
+        is_answerable: boolean
+    }
+    answer_html_url: string | null
+    answer_chosen_at: string | null
+    answer_chosen_by: string | null
+    html_url: string
+    id: number
+    node_id: string
+    number: number
+    title: string
+    user: User
+    labels: string[]
+    state: string
+    state_reason: string | null
+    locked: boolean
+    comments: number
+    created_at: string
+    updated_at: string
+    active_lock_reason: string | null
+    body: string
+    reactions: Reactions
+    timeline_url: string
+}
+
+export interface Release {
+    url: string
+    assets_url: string
+    upload_url: string
+    html_url: string
+    id: number
+    author: User
+    node_id: string
+    tag_name: string
+    target_commitish: string
+    name: string
+    draft: boolean
+    immutable: boolean
+    prerelease: boolean
+    created_at: string
+    updated_at: string
+    published_at: string
+    assets: string[]
+    tarball_url: string
+    zipball_url: string
+    body: string
+    short_description_html: string
+    is_short_description_html_truncated: boolean
+}
+
+
 
 export interface PullRequest {
     url: string
@@ -180,24 +272,41 @@ export interface GitHubData {
 
 export default function listEvents(info: GitHubData[], eventType?: string) {
     if (eventType === undefined) {
+        CommitCommentEvent(info);
         CreateEvent(info);
         DeleteEvent(info);
+        DiscussionEvent(info);
+        ForkEvent(info);
+        GollumEvent(info);
         IssueCommentEvent(info);
         IssuesEvent(info);
         PublicEvent(info);
         PullRequestEvent(info);
         PullRequestReviewEvent(info);
         PushEvent(info);
+        ReleaseEvent(info);
         WatchEvent(info);
         return;
     } 
 
     switch (eventType.toLowerCase()) {
+        case "commitcommentevent":
+            CommitCommentEvent(info);
+            break;
         case "createevent":
             CreateEvent(info);
             break;
         case "deleteevent":
             DeleteEvent(info);
+            break;
+        case "discussionevent":
+            DiscussionEvent(info);
+            break;
+        case "forkevent":
+            ForkEvent(info);
+            break;
+        case "gollumevent":
+            GollumEvent(info);
             break;
         case "issuecommentevent":
             IssueCommentEvent(info);
@@ -217,12 +326,26 @@ export default function listEvents(info: GitHubData[], eventType?: string) {
         case "pushevent":
             PushEvent(info);
             break;
+        case "releaseevent":
+            ReleaseEvent(info);
+            break;
         case "watchevent":
             WatchEvent(info);
             break;
     }
 }
 
+function capitalizeFirstLetter(word: string | undefined): string {
+    return String(word).charAt(0).toUpperCase() + String(word).slice(1);
+}
+
+function CommitCommentEvent(github_user_data: GitHubData[]) {
+    github_user_data.forEach((info) => {
+        if (info.type === "CommitCommentEvent") {
+            console.log(`-> ${capitalizeFirstLetter(info.payload.action)} a comment in commit "${info.payload.comment?.commit_id.slice(0,7)}" in ${info.repo.name}`)
+        }
+    })
+}
 
 function CreateEvent(github_user_data: GitHubData[]) {
     for (const info of github_user_data) {
@@ -260,10 +383,36 @@ function DeleteEvent(github_user_data: GitHubData[]) {
     })
 }
 
+function DiscussionEvent(github_user_data: GitHubData[]) {
+    github_user_data.forEach((info) => {
+        if (info.type === "DiscussionEvent") {
+            console.log(`-> ${capitalizeFirstLetter(info.payload.action)} a discussion titled "${info.payload?.discussion?.title}" in ${info.repo.name}`)
+        }
+    })
+}
+
+function ForkEvent(github_user_data: GitHubData[]) {
+    github_user_data.forEach((info) => {
+        if (info.type === "ForkEvent") {
+            console.log(`-> ${capitalizeFirstLetter(info.payload.action)} ${info.repo.name}`);
+        }
+    })
+}
+
+function GollumEvent(github_user_data: GitHubData[]) {
+    github_user_data.forEach((info) => {
+        if (info.type === "GollumEvent") {
+            info.payload.pages?.forEach((page) => {
+                console.log(`-> ${capitalizeFirstLetter(page.action)} a wiki page titled "${page.page_name}" in ${info.repo.name}`)
+            })
+        }
+    })
+}
+
 function IssueCommentEvent(github_user_data: GitHubData[]) {
     github_user_data.forEach((info) => {
         if (info.type === "IssueCommentEvent") {
-            console.log(`-> ${String(info.payload.action).charAt(0).toUpperCase() + String(info.payload.action).slice(1)} an issue comment #${info.payload.issue?.number} in ${info.repo.name} (${info.payload.issue?.id})`)
+            console.log(`-> ${capitalizeFirstLetter(info.payload.action)} an issue comment (#${info.payload.issue?.number}) in ${info.repo.name} (payload id: ${info.payload.issue?.id})`);
         }
     })
 }
@@ -271,7 +420,7 @@ function IssueCommentEvent(github_user_data: GitHubData[]) {
 function IssuesEvent(github_user_data: GitHubData[]) {
     github_user_data.forEach((info) => {
         if (info.type === "IssuesEvent") {
-            console.log(`-> ${String(info.payload.action).charAt(0).toUpperCase() + String(info.payload.action).slice(1)} an issue #${info.payload.issue?.number} in ${info.repo.name} (${info.payload.issue?.id})`)
+            console.log(`-> ${capitalizeFirstLetter(info.payload.action)} an issue (#${info.payload.issue?.number}) in ${info.repo.name} (payload id: ${info.payload.issue?.id})`)
         }
     })
 }
@@ -287,7 +436,7 @@ function PublicEvent(github_user_data: GitHubData[]) {
 function PullRequestEvent(github_user_data: GitHubData[]) {
     github_user_data.forEach((info) => {
         if (info.type === "PullRequestEvent") {
-            console.log(`-> ${String(info.payload.action).charAt(0).toUpperCase() + String(info.payload.action).slice(1)} PR #${info.payload.number} into ${info.repo.name} (${info.payload.pull_request?.base.ref}) from (${info.payload.pull_request?.head.ref})`)
+            console.log(`-> ${capitalizeFirstLetter(info.payload.action)} PR (#${info.payload.number}) into ${info.repo.name} (${info.payload.pull_request?.base.ref}) from (${info.payload.pull_request?.head.ref})`)
         }
     })
 }
@@ -295,7 +444,7 @@ function PullRequestEvent(github_user_data: GitHubData[]) {
 function PullRequestReviewEvent(github_user_data: GitHubData[]) {
     github_user_data.forEach((info) => {
         if (info.type === "PullRequestReviewEvent") {
-            console.log(`-> ${String(info.payload.action).charAt(0).toUpperCase() + String(info.payload.action).slice(1)} a review (${info.payload.review.id}) in PR #${info.payload.pull_request?.number}, submitted at ${info.payload.review.submitted_at}`)
+            console.log(`-> ${capitalizeFirstLetter(info.payload.action)} a review (${info.payload?.review?.id}) in PR #${info.payload.pull_request?.number}, submitted at ${info.payload?.review?.submitted_at}`)
         }
     })
 }
@@ -321,7 +470,13 @@ function PushEvent(github_user_data: GitHubData[]) {
     })
 }
 
-
+function ReleaseEvent(github_user_data: GitHubData[]) {
+    github_user_data.forEach((info) => {
+        if (info.type === "ReleaseEvent") {
+            console.log(`-> ${capitalizeFirstLetter(info.payload.action)} tag ${info.payload?.release?.tag_name} (${info.payload.release?.target_commitish}) in ${info.repo.name}`)
+        }
+    })
+}
 
 function WatchEvent(github_user_data: GitHubData[]) {
     github_user_data.forEach((info) => {
@@ -329,5 +484,4 @@ function WatchEvent(github_user_data: GitHubData[]) {
             console.log(`-> Starred ${info.repo.name}`);
         }
     })
-    
 }
