@@ -129,12 +129,12 @@ interface Review {
 }
 
 export interface Payload {
-  ref: string
-  ref_type: string
-  full_ref: string
-  master_branch: string
-  description: string
-  pusher_type: string
+  ref?: string
+  ref_type?: string
+  full_ref?: string
+  master_branch?: string
+  description?: string
+  pusher_type?: string
   action?: string
   number?: number
   pull_request?: PullRequest
